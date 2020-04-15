@@ -8,29 +8,33 @@ fn create_tour(mut nodes: Vec<i32>) -> Vec<(i32, i32)> {
     let mut tour = vec![];
     let mut degree = HashMap::new();
 
-    let index_x = (random::<f32>() * nodes.len() as f32).floor() as usize;
-    let x = nodes.remove(index_x);
-    degree.insert(x, 1);
-
-    let index_y = (random::<f32>() * nodes.len() as f32).floor() as usize;
-    let y = nodes.remove(index_y);
-    degree.insert(y, 1);
-
-    connected.push(x);
-    connected.push(y);
-    tour.push((x, y));
+    // We start by connecting two random nodes
+    let first_node_random = remove_random(&mut nodes);
+    let second_node_random = remove_random(&mut nodes);
+    // And storing the first edge of the tour
+    tour.push((first_node_random, second_node_random));
+    // We register the two graphs as connected
+    connected.push(first_node_random);
+    connected.push(second_node_random);
+    // And increase their valency / degree
+    degree.insert(first_node_random, 1);
+    degree.insert(second_node_random, 1);
 
     while nodes.len() > 0 {
-        let x = connected.choose(&mut rand::thread_rng()).unwrap().clone();
-        let index_y = (random::<f32>() * nodes.len() as f32).floor() as usize;
-        let y = nodes.remove(index_y);
-        connected.push(y);
-        degree.insert(y, 1);
-        tour.push((x, y));
-        let current_degree = degree.entry(x).or_insert(0);
+        // We continue connecting loose nodes to registered graphs randomly
+        let connected_random = connected.choose(&mut rand::thread_rng()).unwrap().clone();
+        let loose_random = remove_random(&mut nodes);
+        // and registering the new edges and vertexes
+        connected.push(loose_random);
+        tour.push((connected_random, loose_random));
+        // updating the existing graphs' valencies and adding the new ones
+        degree.insert(loose_random, 1);
+        let current_degree = degree.entry(connected_random).or_insert(0);
         *current_degree += 1;
+        // until there's no more loose nodes
     }
 
+    // We split the connected graphs into odd and even ones by their valency
     let mut odd_nodes = vec![];
     let mut even_nodes = vec![];
 
@@ -41,26 +45,25 @@ fn create_tour(mut nodes: Vec<i32>) -> Vec<(i32, i32)> {
             even_nodes.push(*k);
         }
     }
-
+    // Finally we search for unconnected graphs and update their valency
+    // by connecting them until all graphs have even valencies
     while odd_nodes.len() > 0 {
-        let index_x = (random::<f32>() * odd_nodes.len() as f32).floor() as usize;
-        let x = odd_nodes.remove(index_x);
-
-        match unconnected(x, odd_nodes.clone(), &tour) {
-            Some(y) => {
-                even_nodes.push(x);
-                even_nodes.push(y);
-                tour.push((x, y));
-                let index_y = odd_nodes.iter().position(|i| *i == y).unwrap();
-                odd_nodes.remove(index_y);
+        let connected_odd_random = remove_random(&mut odd_nodes);
+        // by preference we connect graphs with odd valencies
+        match unconnected(connected_odd_random, odd_nodes.clone(), &tour) {
+            Some(odd_vertex) => {
+                even_nodes.push(connected_odd_random);
+                even_nodes.push(odd_vertex);
+                tour.push((connected_odd_random, odd_vertex));
+                remove_by_index(odd_vertex, &mut odd_nodes);
             }
-            None => match unconnected(x, even_nodes.clone(), &tour) {
-                Some(z) => {
-                    even_nodes.push(x);
-                    let index_z = even_nodes.iter().position(|i| *i == z).unwrap();
-                    even_nodes.remove(index_z);
-                    odd_nodes.push(z);
-                    tour.push((x, z));
+            // and continue with vertexes with even valencies, if all odd ones are connected
+            None => match unconnected(connected_odd_random, even_nodes.clone(), &tour) {
+                Some(even_vertex) => {
+                    even_nodes.push(connected_odd_random);
+                    odd_nodes.push(even_vertex);
+                    tour.push((connected_odd_random, even_vertex));
+                    remove_by_index(even_vertex, &mut even_nodes);
                 }
                 None => (()),
             },
@@ -82,6 +85,16 @@ fn is_connected(tour: &Vec<(i32, i32)>, x: i32, y: i32) -> bool {
         }
     }
     result
+}
+
+fn remove_by_index(node: i32, nodes: &mut Vec<i32>) {
+    let index = nodes.iter().position(|i| *i == node).unwrap();
+    nodes.remove(index);
+}
+
+fn remove_random(nodes: &mut Vec<i32>) -> i32 {
+    let index = (random::<f32>() * nodes.len() as f32).floor() as usize;
+    nodes.remove(index)
 }
 
 #[cfg(test)]
