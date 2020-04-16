@@ -1,9 +1,9 @@
 use rand::random;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
-#[allow(dead_code)]
-fn create_tour(mut nodes: Vec<i32>) -> Vec<(i32, i32)> {
+fn create_tour(mut nodes: &mut Vec<i32>) -> Vec<(i32, i32)> {
     let mut connected: Vec<i32> = vec![];
     let mut tour = vec![];
     let mut degree = HashMap::new();
@@ -97,19 +97,104 @@ fn remove_random(nodes: &mut Vec<i32>) -> i32 {
     nodes.remove(index)
 }
 
+fn get_degree(tour: &Vec<(i32, i32)>) -> HashMap<&i32, i32> {
+    let mut degree = HashMap::new();
+    for (x, y) in tour {
+        let x_degree = degree.entry(x).or_insert(0);
+        *x_degree += 1;
+        let y_degree = degree.entry(y).or_insert(0);
+        *y_degree += 1;
+    }
+    degree
+}
+
+fn check_edge(edge: &(i32, i32), node: &i32, nodes: &HashSet<i32>) -> Option<i32> {
+    match edge {
+        (x, y) if x == node => {
+            if !nodes.contains(&y) {
+                return Some(*y);
+            } else {
+                return None;
+            }
+        }
+        (x, y) if y == node => {
+            if !nodes.contains(&x) {
+                return Some(*x);
+            } else {
+                return None;
+            }
+        }
+        _ => None,
+    }
+}
+
+fn connected_nodes(tour: &Vec<(i32, i32)>) -> HashSet<i32> {
+    let first_vertex = tour[0].0;
+    let mut nodes: HashSet<i32> = vec![first_vertex].into_iter().collect();
+    let mut explore: HashSet<i32> = vec![first_vertex].into_iter().collect();
+    while &explore.len() > &0 {
+        let explored_node = explore
+            .take(&explore.clone().into_iter().collect::<Vec<i32>>()[0])
+            .unwrap();
+        for edge in tour {
+            let node = check_edge(&edge, &explored_node, &nodes);
+            match node {
+                Some(x) => {
+                    nodes.insert(x);
+                    explore.insert(x);
+                }
+                _ => (()),
+            }
+        }
+    }
+
+    nodes
+}
+
+pub fn is_eulerian_tour(nodes: &Vec<i32>, tour: &Vec<(i32, i32)>) -> bool {
+    let mut is_eulerian = false;
+    // All vertexes must have even valencies
+    // Every node must be in the graph
+    let degree = get_degree(tour);
+    for node in nodes {
+        let vertex_valency = degree.get(&node);
+        match vertex_valency {
+            Some(v) => {
+                if v % 2 != 0 {
+                    println!("Node {:?} has odd degree", node);
+                    return is_eulerian;
+                } else {
+                    is_eulerian = true;
+                }
+            }
+            _ => {
+                println!("Node {:?} was not in your tour", node);
+                return is_eulerian;
+            }
+        }
+    }
+    let connected = connected_nodes(tour);
+    if connected.len() != nodes.len() {
+        println!("Your graph was not connected");
+        is_eulerian = false;
+    }
+
+    is_eulerian
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn is_eulerian_tour() {
+    fn is_eulerian() {
         let nodes: Vec<i32> = vec![20, 21, 22, 23, 24, 25, 26, 27];
-        let tour = create_tour(nodes);
-        assert_eq!(2, tour.len());
+        let tour = create_tour(&mut nodes.clone());
+        assert_eq!(true, is_eulerian_tour(&nodes, &tour));
     }
 }
 
 fn main() {
-    let nodes: Vec<i32> = vec![20, 21, 22, 23, 24, 25, 26, 27];
-    let tour = create_tour(nodes);
+    let mut nodes: &mut Vec<i32> = &mut vec![20, 21, 22, 23, 24, 25, 26, 27];
+    let tour = create_tour(&mut nodes);
     println!("Eulerian tour graph: {:?}", tour);
 }

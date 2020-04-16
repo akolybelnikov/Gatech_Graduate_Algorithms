@@ -1,7 +1,7 @@
 // Knapsack
-// During a robbery, a burglar finds much more loot than he had expected and has to decide what to take. 
+// During a robbery, a burglar finds much more loot than he had expected and has to decide what to take.
 // His bag (or “knapsack”) will hold a total weight of at most W pounds. There are n items to pick from,
-// of weight w1, . . . , wn and dollar value v1, . . . , vn. 
+// of weight w1, . . . , wn and dollar value v1, . . . , vn.
 // What’s the most valuable combination of items he can fit into his bag?
 // For instance, take W = 10 and
 // Item Weight Value
@@ -9,9 +9,9 @@
 // 2    3       $14
 // 3    4       $16
 // 4    2       $9
-// There are two versions of this problem. 
-// If there are unlimited quantities of each item available, the optimal choice is to pick item 1 and two of item 4 (total: $48). 
-// On the other hand, if there is one of each item (the burglar has broken into an art gallery, say), 
+// There are two versions of this problem.
+// If there are unlimited quantities of each item available, the optimal choice is to pick item 1 and two of item 4 (total: $48).
+// On the other hand, if there is one of each item (the burglar has broken into an art gallery, say),
 // then the optimal knapsack contains items 1 and 3 (total: $46).
 
 use std::cmp::max;
@@ -93,11 +93,7 @@ mod tests {
     fn test_get_knapsack_items_1() {
         assert_eq!(
             get_knapsack_items(
-                &knapsack(
-                    &vec![6, 3, 4, 2],
-                    &vec![30, 14, 16, 9],
-                    10
-                ),
+                &knapsack(&vec![6, 3, 4, 2], &vec![30, 14, 16, 9], 10),
                 &vec![6, 3, 4, 2],
                 10
             ),
@@ -124,7 +120,7 @@ mod tests {
 
 fn main() {
     let weights = &vec![4, 2, 3, 5, 5, 6, 9, 7, 8, 10];
-    let values =  &vec![22, 20, 15, 30, 24, 54, 21, 32, 18, 25];
+    let values = &vec![22, 20, 15, 30, 24, 54, 21, 32, 18, 25];
     let max_weight = 30;
     let knapsack_grid = &knapsack(weights, values, max_weight);
     let knapsack_value = get_knapsack_value(knapsack_grid, weights.len(), max_weight as usize);
